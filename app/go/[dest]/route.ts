@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
+type Ctx = { params: Promise<{ dest: string }> };
+
 /**
  * Simple outbound router.
  * - /go/fapello?path=/creator/xyz  -> https://fapello.com/creator/xyz
  * - /go/fapello                   -> https://fapello.com/
  * - /go/official                  -> replace with your affiliate/official hub
  */
-export function GET(req: NextRequest, ctx: { params: { dest: string } }) {
-  const dest = ctx.params.dest;
+export async function GET(req: NextRequest, ctx: Ctx) {
+  const { dest } = await ctx.params;
   const url = new URL(req.url);
 
   if (dest === "fapello") {
@@ -18,6 +20,7 @@ export function GET(req: NextRequest, ctx: { params: { dest: string } }) {
   }
 
   if (dest === "official") {
+    // TODO: replace with your affiliate / official hub
     return NextResponse.redirect("https://example.com", 302);
   }
 
