@@ -19,61 +19,30 @@ const trending: Creator[] = [
 ];
 
 function Heat({ n }: { n: number }) {
+  const safe = Math.max(1, Math.min(5, n));
   return (
-    <span aria-label={`Heat ${n} of 5`} className="tracking-tight">
-      {"🔥".repeat(Math.max(1, Math.min(5, n)))}
+    <span aria-label={`Heat ${safe} of 5`} className="tracking-tight">
+      {"🔥".repeat(safe)}
     </span>
   );
 }
 
-/**
- * A robust logo renderer:
- * - Tries /fofo-logo.png first (correct)
- * - If your file accidentally ended up as fofo-logo.png.png, it falls back automatically
- * - If both fail, it shows a small "FO" pill so the header never looks broken
- */
-function BrandLogo() {
-  // cache-bust per build by appending a constant query param (safe for static)
-  const primary = "/fofo-logo.png?v=1";
-  const fallback = "/fofo-logo.png.png?v=1"; // handles the accidental double extension
-
+function Brand() {
   return (
-    <div className="flex items-center gap-3">
+    <a href="/" className="flex items-center gap-3">
+      {/* Server-safe: no event handlers */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={primary}
+        src="/fofo-logo.png"
         alt="FansOfOnly"
         className="h-10 w-auto"
         loading="eager"
-        onError={(e) => {
-          const img = e.currentTarget;
-          // If primary fails, try fallback once.
-          if (!img.dataset.fallbackTried) {
-            img.dataset.fallbackTried = "1";
-            img.src = fallback;
-            return;
-          }
-          // If fallback also fails, hide image and show text badge.
-          img.style.display = "none";
-          const badge = img.parentElement?.querySelector<HTMLDivElement>("[data-fo-badge]");
-          if (badge) badge.style.display = "grid";
-        }}
       />
-
-      <div
-        data-fo-badge
-        style={{ display: "none" }}
-        className="h-10 w-10 rounded-2xl bg-zinc-900 text-white grid place-items-center font-semibold"
-        aria-label="FO"
-      >
-        FO
-      </div>
-
       <div className="leading-tight">
         <div className="text-lg font-semibold">fansofonly</div>
         <div className="text-xs text-zinc-500">Discovery • External links</div>
       </div>
-    </div>
+    </a>
   );
 }
 
@@ -82,7 +51,7 @@ export default function HomePage() {
     <main className="min-h-screen bg-zinc-50 text-zinc-950">
       {/* Top bar */}
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5">
-        <BrandLogo />
+        <Brand />
 
         <nav className="flex items-center gap-2">
           <a
@@ -200,7 +169,8 @@ export default function HomePage() {
                 <a
                   href={c.officialUrl ? c.officialUrl : "/go/official"}
                   className="flex-1 rounded-2xl bg-zinc-100 px-4 py-2 text-center text-sm font-semibold text-zinc-900 hover:bg-zinc-200"
-                  rel="nofollow noopener"
+                  target="_blank"
+                  rel="nofollow noopener noreferrer"
                 >
                   Official Page →
                 </a>
@@ -216,7 +186,9 @@ export default function HomePage() {
       <section id="search" className="mx-auto w-full max-w-6xl px-4 pb-10">
         <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-zinc-100 md:p-8">
           <h2 className="text-2xl font-bold">Search Creators</h2>
-          <p className="mt-1 text-sm text-zinc-600">MVP placeholder — wire this to your future index/DB when ready.</p>
+          <p className="mt-1 text-sm text-zinc-600">
+            MVP placeholder — wire this to your future index/DB when ready.
+          </p>
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
             <input
@@ -266,15 +238,9 @@ export default function HomePage() {
             FansOfOnly does not host or store any media. All content is owned by its respective creators and platforms.
           </p>
           <div className="mt-4 flex flex-wrap gap-4 text-sm">
-            <a className="hover:text-zinc-900" href="/privacy">
-              Privacy
-            </a>
-            <a className="hover:text-zinc-900" href="/terms">
-              Terms
-            </a>
-            <a className="hover:text-zinc-900" href="/contact">
-              Contact
-            </a>
+            <a className="hover:text-zinc-900" href="/privacy">Privacy</a>
+            <a className="hover:text-zinc-900" href="/terms">Terms</a>
+            <a className="hover:text-zinc-900" href="/contact">Contact</a>
           </div>
         </div>
       </footer>
