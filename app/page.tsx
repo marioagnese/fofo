@@ -19,9 +19,10 @@ const trending: Creator[] = [
 ];
 
 function Heat({ n }: { n: number }) {
+  const safe = Math.max(1, Math.min(5, n));
   return (
-    <span aria-label={`Heat ${n} of 5`} className="tracking-tight">
-      {"🔥".repeat(Math.max(1, Math.min(5, n)))}
+    <span aria-label={`Heat ${safe} of 5`} className="tracking-tight">
+      {"🔥".repeat(safe)}
     </span>
   );
 }
@@ -31,16 +32,20 @@ export default function HomePage() {
     <main className="min-h-screen bg-zinc-50 text-zinc-950">
       {/* Top bar */}
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5">
-        {/* Replace this text logo with your SVG/PNG if you want */}
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-zinc-900 text-white grid place-items-center font-semibold">
-            FO
-          </div>
-          <div className="leading-tight">
+        {/* Logo + brand */}
+        <a href="/" className="flex items-center gap-3">
+          <img
+            src="/fofo-logo.png"
+            alt="FansOfOnly"
+            className="h-10 w-auto"
+            // If your logo is big, this helps it fit cleanly:
+            style={{ maxWidth: 210 }}
+          />
+          <div className="hidden leading-tight sm:block">
             <div className="text-lg font-semibold">fansofonly</div>
             <div className="text-xs text-zinc-500">Discovery • External links</div>
           </div>
-        </div>
+        </a>
 
         <nav className="flex items-center gap-2">
           <a
@@ -137,10 +142,7 @@ export default function HomePage() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {trending.map((c) => (
-            <div
-              key={c.name}
-              className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-zinc-100"
-            >
+            <div key={c.name} className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-zinc-100">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-lg font-semibold">{c.name}</div>
@@ -161,15 +163,14 @@ export default function HomePage() {
                 <a
                   href={c.officialUrl ? c.officialUrl : "/go/official"}
                   className="flex-1 rounded-2xl bg-zinc-100 px-4 py-2 text-center text-sm font-semibold text-zinc-900 hover:bg-zinc-200"
-                  rel="nofollow noopener"
+                  target="_blank"
+                  rel="nofollow noopener noreferrer"
                 >
                   Official Page →
                 </a>
               </div>
 
-              <div className="mt-3 text-xs text-zinc-500">
-                External link. Content hosted elsewhere.
-              </div>
+              <div className="mt-3 text-xs text-zinc-500">External link. Content hosted elsewhere.</div>
             </div>
           ))}
         </div>
@@ -205,18 +206,9 @@ export default function HomePage() {
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             {[
-              {
-                title: "1️⃣ Discover",
-                body: "Browse trending creators by category and popularity.",
-              },
-              {
-                title: "2️⃣ Explore",
-                body: "We link you to public, free platforms where fans already gather.",
-              },
-              {
-                title: "3️⃣ Support Creators",
-                body: "Visit official pages directly to support creators you enjoy.",
-              },
+              { title: "1️⃣ Discover", body: "Browse trending creators by category and popularity." },
+              { title: "2️⃣ Explore", body: "We link you to public, free platforms where fans already gather." },
+              { title: "3️⃣ Support Creators", body: "Visit official pages directly to support creators you enjoy." },
             ].map((x) => (
               <div key={x.title} className="rounded-3xl bg-zinc-50 p-5 ring-1 ring-zinc-100">
                 <div className="font-semibold">{x.title}</div>
@@ -239,10 +231,12 @@ export default function HomePage() {
           <p className="mt-2">
             FansOfOnly does not host or store any media. All content is owned by its respective creators and platforms.
           </p>
+
+          {/* NOTE: These pages don't exist yet, so keep them as placeholders for now */}
           <div className="mt-4 flex flex-wrap gap-4 text-sm">
-            <a className="hover:text-zinc-900" href="/privacy">Privacy</a>
-            <a className="hover:text-zinc-900" href="/terms">Terms</a>
-            <a className="hover:text-zinc-900" href="/contact">Contact</a>
+            <a className="hover:text-zinc-900" href="#top">Privacy</a>
+            <a className="hover:text-zinc-900" href="#top">Terms</a>
+            <a className="hover:text-zinc-900" href="#top">Contact</a>
           </div>
         </div>
       </footer>
