@@ -10,30 +10,35 @@ export default function HomePage() {
         style={{ backgroundImage: "url('/hero-bg.jpg')" }}
       />
 
-      {/* Soft overlay for readability */}
+      {/* Soft overlay */}
       <div className="absolute inset-0 bg-pink-200/60 backdrop-blur-[1px]" />
 
       {/* Content */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center -translate-y-36">
-        {/* Logo */}
+      <div className="relative z-10 flex min-h-screen flex-col items-center px-6 text-center">
+        {/* Spacer to control vertical position */}
+        <div className="h-24 md:h-32" />
+
+        {/* Logo (CENTERED, ANCHOR ELEMENT) */}
         <img
           src="/fofo-logo.png"
           alt="FansOfOnly"
-          className="mt-10 mb-6 w-[700px] max-w-[92vw] drop-shadow-2xl md:w-[950px]"
+          className="mb-8 w-[700px] max-w-[92vw] drop-shadow-2xl md:w-[950px]"
         />
 
-        {/* CTA — baby pink with subtle glow + pulse */}
+        {/* CTA directly under logo */}
         <a
-          href="/go/fapello/welcome"
-          className="group relative mb-8 inline-flex items-center justify-center rounded-full px-14 py-4 text-sm font-semibold text-pink-900 transition active:scale-[0.98]"
+          href="https://fapello.com/welcome/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group relative mb-10 inline-flex items-center justify-center rounded-full px-14 py-4 text-sm font-semibold text-pink-900 transition active:scale-[0.97]"
         >
-          {/* Glow layer */}
+          {/* Glow */}
           <span
             aria-hidden
-            className="absolute -inset-1 rounded-full bg-pink-300/60 blur-xl opacity-70 transition duration-700 group-hover:opacity-100 animate-pulse"
+            className="absolute -inset-1 rounded-full bg-pink-300/70 blur-xl opacity-70 transition duration-700 group-hover:opacity-100 animate-pulse"
           />
 
-          {/* Button surface */}
+          {/* Button */}
           <span className="relative rounded-full bg-pink-300 px-14 py-4 shadow-xl transition group-hover:bg-pink-400">
             Enter Free
           </span>
