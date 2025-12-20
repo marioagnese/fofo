@@ -14,7 +14,7 @@ export default function HomePage() {
       <div className="absolute inset-0 bg-pink-200/60 backdrop-blur-[1px]" />
 
       {/* Content */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center -translate-y-28">
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center -translate-y-36">
         {/* Logo */}
         <img
           src="/fofo-logo.png"
@@ -22,7 +22,7 @@ export default function HomePage() {
           className="mt-10 mb-6 w-[700px] max-w-[92vw] drop-shadow-2xl md:w-[950px]"
         />
 
-        {/* CTA ABOVE headline — subtle glow + slow pulse */}
+        {/* CTA — baby pink with subtle glow + pulse */}
         <a
           href="/go/fapello"
           className="group relative mb-8 inline-flex items-center justify-center rounded-full px-14 py-4 text-sm font-semibold text-pink-900 transition active:scale-[0.98]"
@@ -30,7 +30,7 @@ export default function HomePage() {
           {/* Glow layer */}
           <span
             aria-hidden
-            className="absolute -inset-1 rounded-full bg-pink-300/60 blur-xl opacity-70 transition duration-500 group-hover:opacity-100 animate-pulse"
+            className="absolute -inset-1 rounded-full bg-pink-300/60 blur-xl opacity-70 transition duration-700 group-hover:opacity-100 animate-pulse"
           />
 
           {/* Button surface */}
@@ -49,7 +49,7 @@ export default function HomePage() {
           FansOfOnly is a discovery hub. We don’t host media.
         </p>
 
-        {/* Footer note */}
+        {/* Footer */}
         <p className="mt-10 text-xs text-zinc-800/80">
           By using this site you agree to our{" "}
           <a href="/terms" className="underline">
