@@ -24,7 +24,7 @@ export default function HomePage() {
 
         {/* CTA — baby pink with subtle glow + pulse */}
         <a
-          href="/go/fapello"
+          href="/go/fapello/welcome"
           className="group relative mb-8 inline-flex items-center justify-center rounded-full px-14 py-4 text-sm font-semibold text-pink-900 transition active:scale-[0.98]"
         >
           {/* Glow layer */}
