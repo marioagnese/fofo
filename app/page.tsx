@@ -14,20 +14,29 @@ export default function HomePage() {
       <div className="absolute inset-0 bg-pink-200/60 backdrop-blur-[1px]" />
 
       {/* Content */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center -translate-y-20">
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center -translate-y-28">
         {/* Logo */}
         <img
           src="/fofo-logo.png"
           alt="FansOfOnly"
-          className="mt-10 mb-8 w-[700px] max-w-[92vw] drop-shadow-2xl md:w-[950px]"
+          className="mt-10 mb-6 w-[700px] max-w-[92vw] drop-shadow-2xl md:w-[950px]"
         />
 
-        {/* CTA ABOVE headline */}
+        {/* CTA ABOVE headline — subtle glow + slow pulse */}
         <a
           href="/go/fapello"
-          className="mb-8 inline-flex items-center justify-center rounded-full bg-pink-300 px-14 py-4 text-sm font-semibold text-pink-900 shadow-xl transition hover:bg-pink-400"
+          className="group relative mb-8 inline-flex items-center justify-center rounded-full px-14 py-4 text-sm font-semibold text-pink-900 transition active:scale-[0.98]"
         >
-          Enter Free
+          {/* Glow layer */}
+          <span
+            aria-hidden
+            className="absolute -inset-1 rounded-full bg-pink-300/60 blur-xl opacity-70 transition duration-500 group-hover:opacity-100 animate-pulse"
+          />
+
+          {/* Button surface */}
+          <span className="relative rounded-full bg-pink-300 px-14 py-4 shadow-xl transition group-hover:bg-pink-400">
+            Enter Free
+          </span>
         </a>
 
         {/* Headline */}
