@@ -14,15 +14,23 @@ export default function HomePage() {
       <div className="absolute inset-0 bg-pink-200/60 backdrop-blur-[1px]" />
 
       {/* Content */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center -translate-y-16">
-        {/* Logo (moved down + ~25% bigger) */}
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center -translate-y-20">
+        {/* Logo */}
         <img
           src="/fofo-logo.png"
           alt="FansOfOnly"
-          className="mt-10 mb-10 w-[700px] max-w-[92vw] drop-shadow-2xl md:w-[950px]"
+          className="mt-10 mb-8 w-[700px] max-w-[92vw] drop-shadow-2xl md:w-[950px]"
         />
 
-        {/* Headline (no dash, no Free inline) */}
+        {/* CTA ABOVE headline */}
+        <a
+          href="/go/fapello"
+          className="mb-8 inline-flex items-center justify-center rounded-full bg-pink-300 px-14 py-4 text-sm font-semibold text-pink-900 shadow-xl transition hover:bg-pink-400"
+        >
+          Enter Free
+        </a>
+
+        {/* Headline */}
         <h1 className="max-w-4xl text-4xl font-extrabold tracking-tight text-zinc-900 md:text-6xl">
           Discover Trending Creators For Free
         </h1>
@@ -31,16 +39,6 @@ export default function HomePage() {
         <p className="mt-6 max-w-xl text-base text-zinc-800 md:text-lg">
           FansOfOnly is a discovery hub. We don’t host media.
         </p>
-
-        {/* Single CTA: Enter Free */}
-        <div className="mt-10">
-          <a
-            href="/go/fapello"
-            className="inline-flex items-center justify-center rounded-2xl bg-pink-600 px-12 py-4 text-sm font-semibold text-white shadow-xl hover:bg-pink-700"
-          >
-            Enter Free
-          </a>
-        </div>
 
         {/* Footer note */}
         <p className="mt-10 text-xs text-zinc-800/80">
