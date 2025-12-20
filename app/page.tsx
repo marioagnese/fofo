@@ -7,18 +7,14 @@ export default function HomePage() {
       {/* Fallback gradient behind everything */}
       <div className="absolute inset-0 bg-gradient-to-b from-pink-200 via-pink-100 to-pink-200" />
 
-      {/* Background image (must be in /public) */}
+      {/* Background image (must exist in /public and be committed) */}
       <div
-        className="absolute inset-0 bg-cover bg-center opacity-70"
-        style={{
-          // IMPORTANT: this must match the exact filename in /public
-          // Your screenshot shows: hero-bg.jpg.png
-          backgroundImage: "url('/hero-bg.jpg.png')",
-        }}
+        className="absolute inset-0 bg-cover bg-center opacity-80"
+        style={{ backgroundImage: "url('/hero-bg.png')" }}
       />
 
-      {/* Overlay to improve text contrast */}
-      <div className="absolute inset-0 bg-pink-200/50 backdrop-blur-[2px]" />
+      {/* Light overlay for text readability (keep light so image still shows) */}
+      <div className="absolute inset-0 bg-pink-200/25" />
 
       {/* Content */}
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
@@ -26,13 +22,12 @@ export default function HomePage() {
         <img
           src="/fofo-logo.png"
           alt="FansOfOnly"
-          className="mb-10 w-[360px] max-w-full drop-shadow-2xl md:w-[520px]"
+          className="mb-10 w-[420px] max-w-full drop-shadow-2xl md:w-[640px]"
         />
 
         {/* Headline */}
         <h1 className="max-w-3xl text-4xl font-extrabold tracking-tight text-zinc-900 md:text-6xl">
-          Discover trending creators —{" "}
-          <span className="text-blue-600">Free</span>
+          Discover trending creators — <span className="text-blue-600">Free</span>
         </h1>
 
         {/* Subtext */}
@@ -52,7 +47,7 @@ export default function HomePage() {
 
           <a
             href="/how"
-            className="rounded-2xl bg-white/80 px-9 py-4 text-sm font-semibold text-zinc-900 shadow-xl hover:bg-white"
+            className="rounded-2xl bg-white/85 px-9 py-4 text-sm font-semibold text-zinc-900 shadow-xl hover:bg-white"
           >
             How it works →
           </a>
