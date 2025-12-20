@@ -14,7 +14,7 @@ export default function HomePage() {
       <div className="absolute inset-0 bg-pink-200/60 backdrop-blur-[1px]" />
 
       {/* Content */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center -translate-y-16">
         {/* Logo (moved down + ~25% bigger) */}
         <img
           src="/fofo-logo.png"
@@ -24,13 +24,12 @@ export default function HomePage() {
 
         {/* Headline (no dash, no Free inline) */}
         <h1 className="max-w-4xl text-4xl font-extrabold tracking-tight text-zinc-900 md:text-6xl">
-          Discover trending creators
+          Discover Trending Creators For Free
         </h1>
 
         {/* Subtext */}
         <p className="mt-6 max-w-xl text-base text-zinc-800 md:text-lg">
-          FansOfOnly is a discovery hub. We don’t host media — we guide you to public pages
-          and official sources.
+          FansOfOnly is a discovery hub. We don’t host media.
         </p>
 
         {/* Single CTA: Enter Free */}
