@@ -29,7 +29,17 @@ const LUNA_IMAGES: string[] = [
   "/luna/images/luna12.jpg",
   "/luna/images/luna13.jpg",
   "/luna/images/luna14.jpg",
-  "/luna/images/luna15.jpg"
+  "/luna/images/luna15.jpg",
+  "/luna/images/luna16.jpg",
+  "/luna/images/luna17.jpg",
+  "/luna/images/luna18.jpg",
+  "/luna/images/luna19.jpg",
+  "/luna/images/luna20.jpg",
+  "/luna/images/luna21.jpg",
+  "/luna/images/luna22.jpg",
+  "/luna/images/luna23.jpg",
+  "/luna/images/luna24.jpg",
+  "/luna/images/luna25.jpg",
 ];
 
 const LUNA_VIDEOS: string[] = [
@@ -48,6 +58,12 @@ const LUNA_VIDEOS: string[] = [
   "/luna/videos/video13.mp4",
   "/luna/videos/video14.mp4",
   "/luna/videos/video15.mp4",
+  "/luna/videos/video16.mp4",
+  "/luna/videos/video17.mp4",
+  "/luna/videos/video18.mp4",
+  "/luna/videos/video19.mp4",
+  "/luna/videos/video20.mp4",
+  "/luna/videos/video21.mp4",
 ];
 
 function pickRandom<T>(arr: T[]): T {
@@ -66,6 +82,7 @@ export default function LunaChatPage() {
     },
   ]);
   const [input, setInput] = useState("");
+  const [isThinking, setIsThinking] = useState(false);
   const nextId = useRef(2);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -77,7 +94,7 @@ export default function LunaChatPage() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const trimmed = input.trim();
-    if (!trimmed) return;
+    if (!trimmed || isThinking) return;
 
     // 1) Add user message immediately
     const userMsg: Message = {
@@ -88,6 +105,7 @@ export default function LunaChatPage() {
     };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
+    setTimeout(scrollToBottom, 50);
 
     const lower = trimmed.toLowerCase();
     const wantsVideo = /video|clip|movie|motion|show.*video/.test(lower);
@@ -142,6 +160,8 @@ export default function LunaChatPage() {
 
     // 3) Otherwise, talk to AI Luna via /api/luna
     try {
+      setIsThinking(true);
+
       const res = await fetch("/api/luna", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -176,9 +196,10 @@ export default function LunaChatPage() {
             "Mmm… something glitched on my side. Try again in a second, okay? 💗",
         },
       ]);
+    } finally {
+      setIsThinking(false);
+      setTimeout(scrollToBottom, 80);
     }
-
-    setTimeout(scrollToBottom, 80);
   };
 
   /* -------------------- UI -------------------- */
@@ -208,7 +229,9 @@ export default function LunaChatPage() {
                 <div className="text-sm font-semibold text-pink-900">
                   Luna · FOFO Hostess
                 </div>
-                <div className="text-xs text-emerald-600">● online</div>
+                <div className="text-xs text-emerald-600">
+                  ● {isThinking ? "typing…" : "online"}
+                </div>
               </div>
             </div>
             <a
@@ -258,6 +281,16 @@ export default function LunaChatPage() {
                 </div>
               );
             })}
+
+            {/* Typing bubble */}
+            {isThinking && (
+              <div className="flex justify-start">
+                <div className="max-w-[60%] rounded-2xl bg-pink-50 px-3 py-2 text-xs text-pink-700 shadow">
+                  Luna is typing…
+                </div>
+              </div>
+            )}
+
             <div ref={bottomRef} />
           </div>
 
@@ -274,9 +307,10 @@ export default function LunaChatPage() {
             />
             <button
               type="submit"
-              className="rounded-full bg-pink-500 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-pink-600 active:scale-[0.97]"
+              disabled={isThinking}
+              className="rounded-full bg-pink-500 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-pink-600 active:scale-[0.97] disabled:opacity-60"
             >
-              Send
+              {isThinking ? "..." : "Send"}
             </button>
           </form>
         </div>
