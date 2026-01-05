@@ -1,12 +1,25 @@
+// app/api/luna/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { LUNA_SYSTEM_PROMPT } from "./systemPrompt";
 import { engagementBoost } from "./engagement";
 import { getMemory, updateMemory } from "./memory";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// ---- Lazy OpenAI client (no error at build time) -----------------
+let openaiClient: OpenAI | null = null;
+
+function getOpenAI() {
+  if (!openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      console.error("OPENAI_API_KEY is missing in the environment");
+      throw new Error("Server misconfiguration: missing OpenAI API key");
+    }
+    openaiClient = new OpenAI({ apiKey });
+  }
+  return openaiClient;
+}
+// -------------------------------------------------------------------
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,6 +54,8 @@ USER MEMORY:
 ${JSON.stringify(memory, null, 2)}
 `;
 
+    const openai = getOpenAI();
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
       messages: [
@@ -51,7 +66,9 @@ ${JSON.stringify(memory, null, 2)}
       max_tokens: 350,
     });
 
-    const reply = completion.choices[0]?.message?.content || "Hmm… I lost my words for a second 😏 say that again?";
+    const reply =
+      completion.choices[0]?.message?.content ||
+      "Hmm… I lost my words for a second 😏 say that again?";
 
     // Very simple mood tracking
     if (reply.toLowerCase().includes("proud of you")) {
