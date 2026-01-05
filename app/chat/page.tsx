@@ -13,7 +13,7 @@ interface Message {
   url?: string;
 }
 
-// --- Local media pools ------------------------------------
+/* -------------------- Local media pools -------------------- */
 const LUNA_IMAGES: string[] = [
   "/luna/images/luna.jpg",
   "/luna/images/luna1.jpg",
@@ -41,6 +41,8 @@ const LUNA_VIDEOS: string[] = [
   "/luna/videos/video7.mp4",
   "/luna/videos/video8.mp4",
   "/luna/videos/video9.mp4",
+  "/luna/videos/video10.mp4",
+  "/luna/videos/video11.mp4",
 ];
 
 function pickRandom<T>(arr: T[]): T {
@@ -54,8 +56,8 @@ export default function LunaChatPage() {
       sender: "luna",
       kind: "text",
       text:
-        "Hey, I’m Luna 💕 Your FOFO hostess.\n" +
-        "Chat with me, or ask: “send me a pic” or “show me a video”.",
+        "Hey, I’m Luna 💕 your FOFO hostess.\n" +
+        "You can just talk to me, or ask: “send me a pic” or “show me a video”.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -66,12 +68,13 @@ export default function LunaChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  /* -------------------- Handle send -------------------- */
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const trimmed = input.trim();
     if (!trimmed) return;
 
-    // add user message
+    // 1) Add user message immediately
     const userMsg: Message = {
       id: nextId.current++,
       sender: "user",
@@ -82,53 +85,98 @@ export default function LunaChatPage() {
     setInput("");
 
     const lower = trimmed.toLowerCase();
-    const wantsVideo = /video|clip|movie|motion/.test(lower);
-    const wantsImage = /pic|photo|image|selfie|picture/.test(lower);
+    const wantsVideo = /video|clip|movie|motion|show.*video/.test(lower);
+    const wantsImage = /pic|photo|image|selfie|picture|show.*pic/.test(lower);
 
-    const replies: Message[] = [];
-
+    // 2) If user requested media, answer from local pool
     if (wantsVideo && LUNA_VIDEOS.length) {
       const url = pickRandom(LUNA_VIDEOS);
-      replies.push({
-        id: nextId.current++,
-        sender: "luna",
-        kind: "text",
-        text: "Here’s a little clip just for you 🎥 Be gentle with me, ok?",
-      });
-      replies.push({
-        id: nextId.current++,
-        sender: "luna",
-        kind: "video",
-        url,
-      });
-    } else if (wantsImage && LUNA_IMAGES.length) {
-      const url = pickRandom(LUNA_IMAGES);
-      replies.push({
-        id: nextId.current++,
-        sender: "luna",
-        kind: "text",
-        text: "You wanted a picture? I picked one just for you 💗",
-      });
-      replies.push({
-        id: nextId.current++,
-        sender: "luna",
-        kind: "image",
-        url,
-      });
-    } else {
-      replies.push({
-        id: nextId.current++,
-        sender: "luna",
-        kind: "text",
-        text:
-          "I love talking… Tell me about your day, or ask for a *pic* or a *video* and I’ll send something cute 😉",
-      });
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: nextId.current++,
+          sender: "luna",
+          kind: "text",
+          text: "Here’s a little clip just for you 🎥 Be gentle with me, ok?",
+        },
+        {
+          id: nextId.current++,
+          sender: "luna",
+          kind: "video",
+          url,
+        },
+      ]);
+
+      setTimeout(scrollToBottom, 80);
+      return;
     }
 
-    setMessages((prev) => [...prev, ...replies]);
+    if (wantsImage && LUNA_IMAGES.length) {
+      const url = pickRandom(LUNA_IMAGES);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: nextId.current++,
+          sender: "luna",
+          kind: "text",
+          text: "You wanted a picture? I picked one just for you 💗",
+        },
+        {
+          id: nextId.current++,
+          sender: "luna",
+          kind: "image",
+          url,
+        },
+      ]);
+
+      setTimeout(scrollToBottom, 80);
+      return;
+    }
+
+    // 3) Otherwise, talk to AI Luna via /api/luna
+    try {
+      const res = await fetch("/api/luna", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: trimmed,
+          userId: "demo-user", // later you can make this real per-user
+        }),
+      });
+
+      const data = await res.json();
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: nextId.current++,
+          sender: "luna",
+          kind: "text",
+          text:
+            data.reply ??
+            "I’m here, just thinking of what to say to you… stay with me 💕",
+        },
+      ]);
+    } catch (err) {
+      console.error(err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: nextId.current++,
+          sender: "luna",
+          kind: "text",
+          text:
+            "Mmm… something glitched on my side. Try again in a second, okay? 💗",
+        },
+      ]);
+    }
+
     setTimeout(scrollToBottom, 80);
   };
 
+  /* -------------------- UI -------------------- */
   return (
     <main className="relative min-h-screen w-screen overflow-hidden bg-pink-100">
       {/* Background same as homepage */}
@@ -173,9 +221,7 @@ export default function LunaChatPage() {
               return (
                 <div
                   key={m.id}
-                  className={`flex ${
-                    isUser ? "justify-end" : "justify-start"
-                  }`}
+                  className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                 >
                   <div
                     className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow ${
