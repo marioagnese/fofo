@@ -1,133 +1,224 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 
-type Message = {
+type Sender = "user" | "luna";
+type MessageKind = "text" | "image" | "video";
+
+interface Message {
   id: number;
-  from: "user" | "luna";
-  text: string;
-};
+  sender: Sender;
+  kind: MessageKind;
+  text?: string;
+  url?: string;
+}
 
-export const dynamic = "force-static";
+// --- Local media pools ------------------------------------
+const LUNA_IMAGES: string[] = [
+  "/luna/images/luna.jpg",
+  "/luna/images/luna1.jpg",
+  "/luna/images/luna2.jpg",
+  "/luna/images/luna3.jpg",
+  "/luna/images/luna5.jpg",
+  "/luna/images/luna6.png",
+  "/luna/images/luna7.jpg",
+  "/luna/images/luna8.png",
+  "/luna/images/luna9.jpg",
+];
 
-export default function ChatPage() {
+const LUNA_VIDEOS: string[] = [
+  "/luna/videos/video1.mp4",
+  "/luna/videos/video2.mp4",
+  "/luna/videos/video3.mp4",
+  "/luna/videos/video4.mp4",
+  "/luna/videos/video5.mp4",
+  "/luna/videos/video6.mp4",
+  "/luna/videos/video7.mp4",
+  "/luna/videos/video8.mp4",
+  "/luna/videos/video9.mp4",
+];
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+export default function LunaChatPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      from: "luna",
-      text: "Hey, I’m Luna 💗 Your FOFO companion. Ask me about creators, vibes, or just say hi.",
+      sender: "luna",
+      kind: "text",
+      text:
+        "Hey, I’m Luna 💕 Your FOFO hostess.\n" +
+        "Chat with me, or ask: “send me a pic” or “show me a video”.",
     },
   ]);
-
   const [input, setInput] = useState("");
-  const [isReplying, setIsReplying] = useState(false);
+  const nextId = useRef(2);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     const trimmed = input.trim();
     if (!trimmed) return;
 
-    const userMessage: Message = {
-      id: Date.now(),
-      from: "user",
+    // add user message
+    const userMsg: Message = {
+      id: nextId.current++,
+      sender: "user",
+      kind: "text",
       text: trimmed,
     };
-
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMsg]);
     setInput("");
-    setIsReplying(true);
 
-    // Fake “AI” reply for now (local only)
-    setTimeout(() => {
-      const lunaReply: Message = {
-        id: Date.now() + 1,
-        from: "luna",
-        text: generateLunaReply(trimmed),
-      };
-      setMessages((prev) => [...prev, lunaReply]);
-      setIsReplying(false);
-    }, 900);
+    const lower = trimmed.toLowerCase();
+    const wantsVideo = /video|clip|movie|motion/.test(lower);
+    const wantsImage = /pic|photo|image|selfie|picture/.test(lower);
+
+    const replies: Message[] = [];
+
+    if (wantsVideo && LUNA_VIDEOS.length) {
+      const url = pickRandom(LUNA_VIDEOS);
+      replies.push({
+        id: nextId.current++,
+        sender: "luna",
+        kind: "text",
+        text: "Here’s a little clip just for you 🎥 Be gentle with me, ok?",
+      });
+      replies.push({
+        id: nextId.current++,
+        sender: "luna",
+        kind: "video",
+        url,
+      });
+    } else if (wantsImage && LUNA_IMAGES.length) {
+      const url = pickRandom(LUNA_IMAGES);
+      replies.push({
+        id: nextId.current++,
+        sender: "luna",
+        kind: "text",
+        text: "You wanted a picture? I picked one just for you 💗",
+      });
+      replies.push({
+        id: nextId.current++,
+        sender: "luna",
+        kind: "image",
+        url,
+      });
+    } else {
+      replies.push({
+        id: nextId.current++,
+        sender: "luna",
+        kind: "text",
+        text:
+          "I love talking… Tell me about your day, or ask for a *pic* or a *video* and I’ll send something cute 😉",
+      });
+    }
+
+    setMessages((prev) => [...prev, ...replies]);
+    setTimeout(scrollToBottom, 80);
   };
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-pink-100">
-      {/* Background (same vibe as homepage) */}
+    <main className="relative min-h-screen w-screen overflow-hidden bg-pink-100">
+      {/* Background same as homepage */}
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: "url('/hero-bg.jpg')" }}
       />
-      <div className="absolute inset-0 bg-pink-200/60 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 bg-pink-200/70 backdrop-blur-sm" />
 
-      {/* Content */}
-      <div className="relative z-10 flex h-screen w-screen items-center justify-center px-4 sm:px-6">
-        <div className="flex h-[80vh] w-full max-w-3xl flex-col rounded-3xl bg-white/85 backdrop-blur shadow-2xl">
+      {/* Chat card */}
+      <div className="relative z-10 flex min-h-screen w-screen items-center justify-center px-4 py-6">
+        <div className="flex h-[80vh] w-full max-w-3xl flex-col rounded-3xl bg-white/90 shadow-2xl backdrop-blur">
           {/* Header */}
-          <header className="flex items-center justify-between border-b border-pink-100 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-pink-100 px-6 py-4">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-pink-400 to-fuchsia-500 shadow-md" />
+              <div className="h-10 w-10 overflow-hidden rounded-full border-2 border-pink-300">
+                <img
+                  src="/luna/images/luna1.jpg"
+                  alt="Luna avatar"
+                  className="h-full w-full object-cover"
+                />
+              </div>
               <div className="text-left">
-                <div className="text-sm font-semibold text-zinc-900">
-                  Luna • FOFO Hostess
+                <div className="text-sm font-semibold text-pink-900">
+                  Luna · FOFO Hostess
                 </div>
-                <div className="text-xs text-pink-500">
-                  {isReplying ? "Typing…" : "Online • here to keep you company 💕"}
-                </div>
+                <div className="text-xs text-emerald-600">● online</div>
               </div>
             </div>
-            <span className="rounded-full bg-pink-100 px-3 py-1 text-[11px] font-semibold text-pink-700">
-              Beta chat
-            </span>
-          </header>
+            <a
+              href="/"
+              className="text-xs font-medium text-pink-500 hover:underline"
+            >
+              ⟵ Back to home
+            </a>
+          </div>
 
           {/* Messages */}
-          <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4 text-left sm:px-5">
-            {messages.map((m) => (
-              <div
-                key={m.id}
-                className={`flex ${
-                  m.from === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
+          <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+            {messages.map((m) => {
+              const isUser = m.sender === "user";
+              return (
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-snug shadow-sm ${
-                    m.from === "user"
-                      ? "rounded-br-sm bg-pink-500 text-white"
-                      : "rounded-bl-sm bg-pink-50 text-zinc-900"
+                  key={m.id}
+                  className={`flex ${
+                    isUser ? "justify-end" : "justify-start"
                   }`}
                 >
-                  {m.text}
-                </div>
-              </div>
-            ))}
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow ${
+                      isUser
+                        ? "bg-pink-500 text-white rounded-br-sm"
+                        : "bg-pink-50 text-pink-900 rounded-bl-sm"
+                    }`}
+                  >
+                    {m.kind === "text" && m.text && (
+                      <p className="whitespace-pre-line">{m.text}</p>
+                    )}
 
-            {isReplying && (
-              <div className="flex justify-start">
-                <div className="flex items-center gap-1 rounded-2xl bg-pink-50 px-3 py-2 text-xs text-pink-600">
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-pink-400" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-pink-400 delay-150" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-pink-400 delay-300" />
-                  <span className="ml-1">Luna is typing…</span>
+                    {m.kind === "image" && m.url && (
+                      <img
+                        src={m.url}
+                        alt="Luna"
+                        className="mt-1 max-h-80 w-full rounded-xl object-cover"
+                      />
+                    )}
+
+                    {m.kind === "video" && m.url && (
+                      <video
+                        src={m.url}
+                        controls
+                        className="mt-1 max-h-80 w-full rounded-xl"
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })}
+            <div ref={bottomRef} />
           </div>
 
           {/* Input */}
           <form
             onSubmit={handleSubmit}
-            className="flex items-center gap-2 border-t border-pink-100 bg-white/90 px-4 py-3 sm:px-5"
+            className="flex items-center gap-2 border-t border-pink-100 px-4 py-3"
           >
             <input
-              type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Tell Luna how you’re feeling or what you want to explore…"
-              className="flex-1 rounded-full border border-pink-100 bg-pink-50/60 px-4 py-2 text-sm text-zinc-900 outline-none ring-pink-300 placeholder:text-zinc-400 focus:border-pink-300 focus:ring-2"
+              placeholder="Ask Luna for a pic, a video, or just talk to her…"
+              className="flex-1 rounded-full border border-pink-200 bg-white/80 px-4 py-2 text-sm outline-none focus:border-pink-400 focus:ring-1 focus:ring-pink-300"
             />
             <button
               type="submit"
-              disabled={!input.trim()}
-              className="rounded-full bg-pink-500 px-5 py-2 text-xs font-semibold text-white shadow-md transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:bg-pink-300"
+              className="rounded-full bg-pink-500 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-pink-600 active:scale-[0.97]"
             >
               Send
             </button>
@@ -136,26 +227,4 @@ export default function ChatPage() {
       </div>
     </main>
   );
-}
-
-function generateLunaReply(userText: string): string {
-  const lowered = userText.toLowerCase();
-
-  if (lowered.includes("lonely") || lowered.includes("alone")) {
-    return "I’m here now, so you’re not alone anymore 💕 Tell me what kind of company you’re in the mood for tonight.";
-  }
-
-  if (lowered.includes("creator") || lowered.includes("of")) {
-    return "You like exploring creators, huh? 😏 Tell me a type or vibe you like and I’ll react like your personal FOFO hostess.";
-  }
-
-  if (lowered.includes("hi") || lowered.includes("hello") || lowered.includes("hey")) {
-    return "Hey you 😌 I’m Luna. I’m here to flirt a little, listen a lot, and keep you in a good mood. What’s your name?";
-  }
-
-  if (lowered.includes("stress") || lowered.includes("tired")) {
-    return "Long day? Come sit with me for a bit. Breathe in, breathe out, and tell me what’s been on your mind. I’m all yours for a while. 💗";
-  }
-
-  return "Mmm, interesting… 😏 Tell me more. I want to get a better feel for what you like so I can keep you smiling.";
 }
