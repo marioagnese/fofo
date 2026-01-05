@@ -24,6 +24,11 @@ const LUNA_IMAGES: string[] = [
   "/luna/images/luna7.jpg",
   "/luna/images/luna8.png",
   "/luna/images/luna9.jpg",
+  "/luna/images/luna10.jpg",
+  "/luna/images/luna11.jpg",
+  "/luna/images/luna12.jpg",
+  "/luna/images/luna13.jpg",
+  "/luna/images/luna14.jpg",
 ];
 
 const LUNA_VIDEOS: string[] = [
