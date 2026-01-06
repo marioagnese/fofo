@@ -40,6 +40,14 @@ const LUNA_IMAGES: string[] = [
   "/luna/images/luna23.jpg",
   "/luna/images/luna24.jpg",
   "/luna/images/luna25.jpg",
+  "/luna/images/luna26.jpg",
+  "/luna/images/luna27.jpg",
+  "/luna/images/luna28.jpg",
+  "/luna/images/luna29.jpg",
+  "/luna/images/luna30.jpg",
+  "/luna/images/luna31.jpg",
+  "/luna/images/luna32.jpg",
+  "/luna/images/luna33.jpg",
 ];
 
 const LUNA_VIDEOS: string[] = [
@@ -64,6 +72,11 @@ const LUNA_VIDEOS: string[] = [
   "/luna/videos/video19.mp4",
   "/luna/videos/video20.mp4",
   "/luna/videos/video21.mp4",
+  "/luna/videos/video22.mp4",
+  "/luna/videos/video23.mp4",
+  "/luna/videos/video24.mp4",
+  "/luna/videos/video25.mp4",
+  "/luna/videos/video26.mp4",
 ];
 
 function pickRandom<T>(arr: T[]): T {
