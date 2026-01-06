@@ -5,35 +5,43 @@ import { LUNA_SYSTEM_PROMPT } from "./systemPrompt";
 import { engagementBoost } from "./engagement";
 import { getMemory, updateMemory } from "./memory";
 
-// Force Node.js runtime (not edge)
+// Force Node runtime (important for OpenAI SDK on Vercel)
 export const runtime = "nodejs";
 
-// ---- Lazy OpenAI client (no error at build time) -----------------
+// ---- Lazy OpenAI client ---------------------------------------
 let openaiClient: OpenAI | null = null;
 
 function getOpenAI() {
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    console.error("OPENAI_API_KEY is missing in the environment");
+    throw new Error("OPENAI_API_KEY is not set on the server");
+  }
+
   if (!openaiClient) {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      console.error("OPENAI_API_KEY is missing in the environment");
-      throw new Error("Server misconfiguration: missing OpenAI API key");
-    }
     openaiClient = new OpenAI({ apiKey });
   }
+
   return openaiClient;
 }
-// -------------------------------------------------------------------
+// ----------------------------------------------------------------
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, userId = "anonymous" } = await req.json();
+    const body = await req.json().catch(() => null);
 
-    if (!message || typeof message !== "string") {
+    if (!body || typeof body.message !== "string") {
       return NextResponse.json(
-        { error: "Missing message" },
+        { error: "Missing or invalid 'message' field" },
         { status: 400 }
       );
     }
+
+    const { message, userId = "anonymous" } = body as {
+      message: string;
+      userId?: string;
+    };
 
     // Basic in-memory profile
     const memory = getMemory(userId);
@@ -44,7 +52,7 @@ export async function POST(req: NextRequest) {
       updateMemory(userId, { name: nameMatch[1] });
     }
 
-    // Engagement boost (keeps convo flirty & alive but still SFW)
+    // Engagement boost (keeps convo flirty & alive)
     const boost = engagementBoost(message);
     const finalUserMessage = boost
       ? `${message}\n\n[CONTEXT: ${boost}]`
@@ -79,10 +87,17 @@ ${JSON.stringify(memory, null, 2)}
     }
 
     return NextResponse.json({ reply });
-  } catch (err) {
+  } catch (err: any) {
+    // This will show up in Vercel function logs
     console.error("Luna API error:", err);
+
+    // Send a bit more detail to the client while debugging (no secrets)
     return NextResponse.json(
-      { error: "Luna had a little glitch. Try again in a second, babe 💕" },
+      {
+        error: "Luna had a little glitch. Try again in a second, babe 💕",
+        details:
+          err instanceof Error ? err.message : typeof err === "string" ? err : undefined,
+      },
       { status: 500 }
     );
   }
