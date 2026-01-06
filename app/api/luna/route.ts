@@ -5,6 +5,9 @@ import { LUNA_SYSTEM_PROMPT } from "./systemPrompt";
 import { engagementBoost } from "./engagement";
 import { getMemory, updateMemory } from "./memory";
 
+// Force Node.js runtime (not edge)
+export const runtime = "nodejs";
+
 // ---- Lazy OpenAI client (no error at build time) -----------------
 let openaiClient: OpenAI | null = null;
 
@@ -41,7 +44,7 @@ export async function POST(req: NextRequest) {
       updateMemory(userId, { name: nameMatch[1] });
     }
 
-    // Engagement boost (keeps convo flirty & alive)
+    // Engagement boost (keeps convo flirty & alive but still SFW)
     const boost = engagementBoost(message);
     const finalUserMessage = boost
       ? `${message}\n\n[CONTEXT: ${boost}]`
