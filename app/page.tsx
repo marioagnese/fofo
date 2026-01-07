@@ -1,4 +1,3 @@
-// app/page.tsx
 export const dynamic = "force-static";
 
 export default function HomePage() {
@@ -13,7 +12,8 @@ export default function HomePage() {
 
       {/* Content */}
       <div className="relative z-10 flex h-screen w-screen flex-col items-center justify-center px-6 text-center">
-        <div className="flex w-full max-w-6xl flex-col items-center gap-4">
+        <div className="flex w-full max-w-6xl flex-col items-center gap-6">
+
           {/* LOGO */}
           <img
             src="/fofo-logo.png"
@@ -27,68 +27,61 @@ export default function HomePage() {
             }}
           />
 
-          {/* CTAs */}
-          <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
-            {/* Primary: continue to links page */}
-            <a
-              href="/continue"
-              className="group relative inline-flex items-center justify-center rounded-full px-10 py-3 text-sm font-semibold text-pink-900 transition active:scale-[0.97]"
-            >
-              <span
-                aria-hidden
-                className="absolute -inset-1 rounded-full bg-pink-300/70 blur-xl opacity-70 transition duration-700 group-hover:opacity-100 animate-pulse"
-              />
-              <span className="relative rounded-full bg-pink-300 px-10 py-3 shadow-xl transition group-hover:bg-pink-400">
-                Continue
-              </span>
-            </a>
+          {/* HERO GRID */}
+          <div className="mt-2 grid w-full max-w-6xl grid-cols-1 items-center gap-8 sm:grid-cols-2">
 
-            {/* Secondary: chat with Luna */}
-            <a
-              href="/chat"
-              className="inline-flex items-center justify-center rounded-full border border-pink-300 bg-white/70 px-8 py-3 text-sm font-semibold text-pink-700 shadow-sm transition hover:bg-pink-50"
-            >
-              Chat with Luna 💗
-            </a>
+            {/* LEFT SIDE — TEXT + BUTTONS */}
+            <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
+              <h1 className="font-extrabold tracking-tight text-zinc-900"
+                style={{ fontSize: "clamp(28px, 4vw, 52px)" }}>
+                Meet Luna — Your FOFO Hostess 💗
+              </h1>
+
+              <p className="mt-2 text-zinc-800 text-sm sm:text-base max-w-md">
+                Step into FOFO — a warm fantasy world where you’re never alone.
+                Luna is waiting to comfort you, tease you, and keep you company.
+              </p>
+
+              {/* CTA BUTTONS */}
+              <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                <a
+                  href="/continue"
+                  className="rounded-full bg-pink-300 px-10 py-3 text-sm font-semibold 
+                  text-pink-900 shadow-xl hover:bg-pink-400 transition active:scale-[0.97]"
+                >
+                  Continue
+                </a>
+
+                <a
+                  href="/chat"
+                  className="rounded-full border border-pink-300 bg-white/70 px-8 py-3 
+                  text-sm font-semibold text-pink-700 shadow hover:bg-pink-50"
+                >
+                  Chat with Luna 💗
+                </a>
+              </div>
+            </div>
+
+            {/* RIGHT SIDE — LUNA IMAGE */}
+            <div className="flex justify-center sm:justify-end">
+              <img
+                src="/luna/images/lunafront.jpg"
+                alt="Luna"
+                className="w-[320px] sm:w-[420px] max-w-full rounded-3xl shadow-2xl 
+                border border-white/50 object-cover"
+              />
+            </div>
           </div>
 
-          {/* Headline */}
-          <h1
-            className="mt-4 font-extrabold tracking-tight text-zinc-900"
-            style={{
-              fontSize: "clamp(28px, 4vw, 56px)",
-              lineHeight: 1.05,
-            }}
-          >
-            Discover Trending Creators
-          </h1>
-
-          {/* Subtext */}
-          <p
-            className="text-zinc-800"
-            style={{ fontSize: "clamp(14px, 1.6vw, 18px)" }}
-          >
-            FansOfOnly is an independent discovery hub. We don’t host or store media.
-          </p>
-
-          {/* Small helper line under the buttons */}
-          <p className="mt-1 text-xs text-zinc-700/80">
-            Choose an official link (supports creators) or public previews on external sites.
-          </p>
-
-          {/* Footer / legal */}
+          {/* Footer text */}
           <p className="mt-2 text-[11px] text-zinc-800/80 max-w-3xl">
             By using this site you agree to our{" "}
-            <a href="/terms" className="underline">
-              Terms
-            </a>{" "}
-            and{" "}
-            <a href="/privacy" className="underline">
-              Privacy
-            </a>
-            . Links may be affiliate links; we may earn a commission. All trademarks belong
-            to their respective owners. 18+ only.
+            <a href="/terms" className="underline">Terms</a> and{" "}
+            <a href="/privacy" className="underline">Privacy</a>. 
+            Links may be affiliate links; we may earn a commission. 
+            All trademarks belong to their respective owners. 18+ only.
           </p>
+
         </div>
       </div>
     </main>
