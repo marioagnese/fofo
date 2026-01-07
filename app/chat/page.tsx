@@ -40,14 +40,6 @@ const LUNA_IMAGES: string[] = [
   "/luna/images/luna23.jpg",
   "/luna/images/luna24.jpg",
   "/luna/images/luna25.jpg",
-  "/luna/images/luna26.jpg",
-  "/luna/images/luna27.jpg",
-  "/luna/images/luna28.jpg",
-  "/luna/images/luna29.jpg",
-  "/luna/images/luna30.jpg",
-  "/luna/images/luna31.jpg",
-  "/luna/images/luna32.jpg",
-  "/luna/images/luna33.jpg",
 ];
 
 const LUNA_VIDEOS: string[] = [
@@ -72,15 +64,34 @@ const LUNA_VIDEOS: string[] = [
   "/luna/videos/video19.mp4",
   "/luna/videos/video20.mp4",
   "/luna/videos/video21.mp4",
-  "/luna/videos/video22.mp4",
-  "/luna/videos/video23.mp4",
-  "/luna/videos/video24.mp4",
-  "/luna/videos/video25.mp4",
-  "/luna/videos/video26.mp4",
 ];
 
-function pickRandom<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+/** Non-repeating picker: walks through the pool before repeating */
+function pickNonRepeating<T>(
+  arr: T[],
+  usedRef: React.MutableRefObject<number[]>
+): T {
+  if (!arr.length) {
+    throw new Error("Empty media pool");
+  }
+
+  // Reset if we've already used everything once
+  if (usedRef.current.length >= arr.length) {
+    usedRef.current = [];
+  }
+
+  const used = new Set(usedRef.current);
+  const availableIndices: number[] = [];
+
+  for (let i = 0; i < arr.length; i++) {
+    if (!used.has(i)) availableIndices.push(i);
+  }
+
+  const idx =
+    availableIndices[Math.floor(Math.random() * availableIndices.length)];
+
+  usedRef.current.push(idx);
+  return arr[idx];
 }
 
 export default function LunaChatPage() {
@@ -91,13 +102,18 @@ export default function LunaChatPage() {
       kind: "text",
       text:
         "Hey, I’m Luna 💕 your FOFO hostess.\n" +
-        "You can just talk to me, or ask: “send me a pic” or “show me a video”.",
+        'You can just talk to me, or ask: “send me a pic” or “show me a video”.',
     },
   ]);
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
+
   const nextId = useRef(2);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  // Track what media we’ve already shown this session
+  const usedImageIndexes = useRef<number[]>([]);
+  const usedVideoIndexes = useRef<number[]>([]);
 
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -124,9 +140,9 @@ export default function LunaChatPage() {
     const wantsVideo = /video|clip|movie|motion|show.*video/.test(lower);
     const wantsImage = /pic|photo|image|selfie|picture|show.*pic/.test(lower);
 
-    // 2) If user requested media, answer from local pool
+    // 2) If user requested media, answer from local pool (no repeats until exhausted)
     if (wantsVideo && LUNA_VIDEOS.length) {
-      const url = pickRandom(LUNA_VIDEOS);
+      const url = pickNonRepeating(LUNA_VIDEOS, usedVideoIndexes);
 
       setMessages((prev) => [
         ...prev,
@@ -149,7 +165,7 @@ export default function LunaChatPage() {
     }
 
     if (wantsImage && LUNA_IMAGES.length) {
-      const url = pickRandom(LUNA_IMAGES);
+      const url = pickNonRepeating(LUNA_IMAGES, usedImageIndexes);
 
       setMessages((prev) => [
         ...prev,
