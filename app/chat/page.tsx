@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import React, { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type Sender = "user" | "luna";
 type MessageKind = "text" | "image" | "video";
@@ -14,6 +14,12 @@ interface Message {
 }
 
 /* -------------------- Local media pools -------------------- */
+/**
+ * IMPORTANT:
+ * - These must match exactly what exists under /public
+ * - If you add new files (luna33.jpg, video26.mp4, etc) add them here.
+ * - (Later we can generate this automatically with a manifest.)
+ */
 const LUNA_IMAGES: string[] = [
   "/luna/images/luna.jpg",
   "/luna/images/luna1.jpg",
@@ -40,6 +46,15 @@ const LUNA_IMAGES: string[] = [
   "/luna/images/luna23.jpg",
   "/luna/images/luna24.jpg",
   "/luna/images/luna25.jpg",
+
+  // add your newer ones (from your screenshot)
+  "/luna/images/luna33.jpg",
+  "/luna/images/luna34.png",
+  "/luna/images/luna35.jpg",
+  "/luna/images/luna36.jpg",
+  "/luna/images/luna37.jpg",
+  "/luna/images/luna38.jpg",
+  "/luna/images/lunafront.jpg",
 ];
 
 const LUNA_VIDEOS: string[] = [
@@ -64,37 +79,103 @@ const LUNA_VIDEOS: string[] = [
   "/luna/videos/video19.mp4",
   "/luna/videos/video20.mp4",
   "/luna/videos/video21.mp4",
+
+  // add your newer ones
+  "/luna/videos/video22.mp4",
+  "/luna/videos/video23.mp4",
+  "/luna/videos/video24.mp4",
+  "/luna/videos/video25.mp4",
+  "/luna/videos/video26.mp4",
+  "/luna/videos/video27.mp4",
+  "/luna/videos/video28.mp4",
+  "/luna/videos/video29.mp4",
+  "/luna/videos/video30.mp4",
+  "/luna/videos/video31.mp4",
+  "/luna/videos/video32.mp4",
 ];
 
-/** Non-repeating picker: walks through the pool before repeating */
-function pickNonRepeating<T>(
-  arr: T[],
-  usedRef: React.MutableRefObject<number[]>
-): T {
-  if (!arr.length) {
-    throw new Error("Empty media pool");
+/* -------------------- Persistent non-repeat helpers -------------------- */
+function lsKey(userId: string, kind: "images" | "videos") {
+  return `fofo:luna:seen:${kind}:${userId}`;
+}
+
+function readSeen(userId: string, kind: "images" | "videos"): number[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(lsKey(userId, kind));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((n) => Number.isInteger(n)) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSeen(userId: string, kind: "images" | "videos", arr: number[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(lsKey(userId, kind), JSON.stringify(arr));
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Pick an item that:
+ * 1) has NOT been seen by this user (persisted)
+ * 2) has NOT been used in the current session
+ * 3) has NOT been used already in this chat transcript
+ *
+ * When exhausted, it resets “seen” and continues (but still avoids immediate repeats in-chat).
+ */
+function pickNonRepeatingUrl(
+  pool: string[],
+  usedSessionRef: React.MutableRefObject<number[]>,
+  seenPersistedRef: React.MutableRefObject<number[]>,
+  alreadyInChat: Set<string>
+): { url: string; idx: number } {
+  if (!pool.length) throw new Error("Empty media pool");
+
+  // helper to list candidate indices based on a disallowed set
+  const candidatesFrom = (disallowedIdx: Set<number>) => {
+    const out: number[] = [];
+    for (let i = 0; i < pool.length; i++) {
+      if (!disallowedIdx.has(i) && !alreadyInChat.has(pool[i])) out.push(i);
+    }
+    return out;
+  };
+
+  // 1) try: not seen + not used this session
+  const disallowed = new Set<number>([...seenPersistedRef.current, ...usedSessionRef.current]);
+  let candidates = candidatesFrom(disallowed);
+
+  // 2) if none: allow seen reset (but still avoid session repeats)
+  if (!candidates.length) {
+    seenPersistedRef.current = [];
+    candidates = candidatesFrom(new Set<number>(usedSessionRef.current));
   }
 
-  // Reset if we've already used everything once
-  if (usedRef.current.length >= arr.length) {
-    usedRef.current = [];
+  // 3) if still none (chat already contains everything): allow anything except last-used-in-session if possible
+  if (!candidates.length) {
+    const dis2 = new Set<number>(usedSessionRef.current.slice(-1));
+    candidates = candidatesFrom(dis2);
   }
 
-  const used = new Set(usedRef.current);
-  const availableIndices: number[] = [];
+  // 4) last resort: any index
+  const idx = candidates.length
+    ? candidates[Math.floor(Math.random() * candidates.length)]
+    : Math.floor(Math.random() * pool.length);
 
-  for (let i = 0; i < arr.length; i++) {
-    if (!used.has(i)) availableIndices.push(i);
-  }
+  usedSessionRef.current.push(idx);
+  seenPersistedRef.current.push(idx);
 
-  const idx =
-    availableIndices[Math.floor(Math.random() * availableIndices.length)];
-
-  usedRef.current.push(idx);
-  return arr[idx];
+  return { url: pool[idx], idx };
 }
 
 export default function LunaChatPage() {
+  // NOTE: replace later with your real auth userId.
+  const userId = "demo-user";
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -111,15 +192,78 @@ export default function LunaChatPage() {
   const nextId = useRef(2);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  // Track what media we’ve already shown this session
-  const usedImageIndexes = useRef<number[]>([]);
-  const usedVideoIndexes = useRef<number[]>([]);
+  // Track what media we’ve already shown THIS TAB SESSION
+  const usedImageIndexesSession = useRef<number[]>([]);
+  const usedVideoIndexesSession = useRef<number[]>([]);
+
+  // Track what media the USER has seen (persisted)
+  const seenImageIndexesPersisted = useRef<number[]>([]);
+  const seenVideoIndexesPersisted = useRef<number[]>([]);
+
+  useEffect(() => {
+    // load persisted indices once
+    seenImageIndexesPersisted.current = readSeen(userId, "images");
+    seenVideoIndexesPersisted.current = readSeen(userId, "videos");
+  }, [userId]);
+
+  const alreadyInChat = useMemo(() => {
+    const s = new Set<string>();
+    for (const m of messages) if (m.url) s.add(m.url);
+    return s;
+  }, [messages]);
 
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  /* -------------------- Handle send -------------------- */
+  const addLunaText = (text: string) => {
+    setMessages((prev) => [
+      ...prev,
+      { id: nextId.current++, sender: "luna", kind: "text", text },
+    ]);
+  };
+
+  const addLunaMedia = (kind: "image" | "video", url: string) => {
+    setMessages((prev) => [
+      ...prev,
+      { id: nextId.current++, sender: "luna", kind, url },
+    ]);
+  };
+
+  const sendMedia = (kind: "image" | "video") => {
+    if (kind === "video" && LUNA_VIDEOS.length) {
+      const picked = pickNonRepeatingUrl(
+        LUNA_VIDEOS,
+        usedVideoIndexesSession,
+        seenVideoIndexesPersisted,
+        alreadyInChat
+      );
+      writeSeen(userId, "videos", seenVideoIndexesPersisted.current);
+
+      addLunaText("Here’s a little clip just for you 🎥 Be gentle with me, ok?");
+      addLunaMedia("video", picked.url);
+      setTimeout(scrollToBottom, 80);
+      return;
+    }
+
+    if (kind === "image" && LUNA_IMAGES.length) {
+      const picked = pickNonRepeatingUrl(
+        LUNA_IMAGES,
+        usedImageIndexesSession,
+        seenImageIndexesPersisted,
+        alreadyInChat
+      );
+      writeSeen(userId, "images", seenImageIndexesPersisted.current);
+
+      addLunaText("You wanted a picture? I picked one just for you 💗");
+      addLunaMedia("image", picked.url);
+      setTimeout(scrollToBottom, 80);
+      return;
+    }
+
+    addLunaText("Mmm… I don’t have any new ones loaded right now. Try again soon? 💗");
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const trimmed = input.trim();
@@ -139,52 +283,14 @@ export default function LunaChatPage() {
     const lower = trimmed.toLowerCase();
     const wantsVideo = /video|clip|movie|motion|show.*video/.test(lower);
     const wantsImage = /pic|photo|image|selfie|picture|show.*pic/.test(lower);
+    const wantsSurprise = /surprise|random|anything|your choice|dealer/.test(lower);
 
-    // 2) If user requested media, answer from local pool (no repeats until exhausted)
-    if (wantsVideo && LUNA_VIDEOS.length) {
-      const url = pickNonRepeating(LUNA_VIDEOS, usedVideoIndexes);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: nextId.current++,
-          sender: "luna",
-          kind: "text",
-          text: "Here’s a little clip just for you 🎥 Be gentle with me, ok?",
-        },
-        {
-          id: nextId.current++,
-          sender: "luna",
-          kind: "video",
-          url,
-        },
-      ]);
-
-      setTimeout(scrollToBottom, 80);
-      return;
-    }
-
-    if (wantsImage && LUNA_IMAGES.length) {
-      const url = pickNonRepeating(LUNA_IMAGES, usedImageIndexes);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: nextId.current++,
-          sender: "luna",
-          kind: "text",
-          text: "You wanted a picture? I picked one just for you 💗",
-        },
-        {
-          id: nextId.current++,
-          sender: "luna",
-          kind: "image",
-          url,
-        },
-      ]);
-
-      setTimeout(scrollToBottom, 80);
-      return;
+    // 2) Media routing (non-repeating, persistent)
+    if (wantsVideo) return sendMedia("video");
+    if (wantsImage) return sendMedia("image");
+    if (wantsSurprise) {
+      // bias to images but sometimes video
+      return Math.random() < 0.75 ? sendMedia("image") : sendMedia("video");
     }
 
     // 3) Otherwise, talk to AI Luna via /api/luna
@@ -196,7 +302,7 @@ export default function LunaChatPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: trimmed,
-          userId: "demo-user", // later you can make this real per-user
+          userId,
         }),
       });
 
@@ -221,8 +327,7 @@ export default function LunaChatPage() {
           id: nextId.current++,
           sender: "luna",
           kind: "text",
-          text:
-            "Mmm… something glitched on my side. Try again in a second, okay? 💗",
+          text: "Mmm… something glitched on my side. Try again in a second, okay? 💗",
         },
       ]);
     } finally {
@@ -234,14 +339,13 @@ export default function LunaChatPage() {
   /* -------------------- UI -------------------- */
   return (
     <main className="relative min-h-screen w-screen overflow-hidden bg-pink-100">
-      {/* Background same as homepage */}
+      {/* Background */}
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: "url('/hero-bg.jpg')" }}
       />
       <div className="absolute inset-0 bg-pink-200/70 backdrop-blur-sm" />
 
-      {/* Chat card */}
       <div className="relative z-10 flex min-h-screen w-screen items-center justify-center px-4 py-6">
         <div className="flex h-[80vh] w-full max-w-3xl flex-col rounded-3xl bg-white/90 shadow-2xl backdrop-blur">
           {/* Header */}
@@ -263,12 +367,43 @@ export default function LunaChatPage() {
                 </div>
               </div>
             </div>
-            <a
-              href="/"
-              className="text-xs font-medium text-pink-500 hover:underline"
-            >
+            <a href="/" className="text-xs font-medium text-pink-500 hover:underline">
               ⟵ Back to home
             </a>
+          </div>
+
+          {/* Quick actions */}
+          <div className="border-b border-pink-100 px-4 py-3">
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => sendMedia("image")}
+                className="rounded-full border border-pink-200 bg-white/80 px-3 py-1 text-xs font-semibold text-pink-700 hover:bg-pink-50"
+              >
+                Send a pic 📸
+              </button>
+              <button
+                type="button"
+                onClick={() => sendMedia("video")}
+                className="rounded-full border border-pink-200 bg-white/80 px-3 py-1 text-xs font-semibold text-pink-700 hover:bg-pink-50"
+              >
+                Send a video 🎥
+              </button>
+              <button
+                type="button"
+                onClick={() => (Math.random() < 0.75 ? sendMedia("image") : sendMedia("video"))}
+                className="rounded-full border border-pink-200 bg-white/80 px-3 py-1 text-xs font-semibold text-pink-700 hover:bg-pink-50"
+              >
+                Surprise me 🎲
+              </button>
+              <button
+                type="button"
+                onClick={() => setInput("What is FOFO? Explain it in a fun way.")}
+                className="rounded-full border border-pink-200 bg-white/80 px-3 py-1 text-xs font-semibold text-pink-700 hover:bg-pink-50"
+              >
+                What’s FOFO? ✨
+              </button>
+            </div>
           </div>
 
           {/* Messages */}
@@ -296,6 +431,7 @@ export default function LunaChatPage() {
                         src={m.url}
                         alt="Luna"
                         className="mt-1 max-h-80 w-full rounded-xl object-cover"
+                        loading="lazy"
                       />
                     )}
 
@@ -304,6 +440,7 @@ export default function LunaChatPage() {
                         src={m.url}
                         controls
                         className="mt-1 max-h-80 w-full rounded-xl"
+                        preload="metadata"
                       />
                     )}
                   </div>
@@ -311,7 +448,6 @@ export default function LunaChatPage() {
               );
             })}
 
-            {/* Typing bubble */}
             {isThinking && (
               <div className="flex justify-start">
                 <div className="max-w-[60%] rounded-2xl bg-pink-50 px-3 py-2 text-xs text-pink-700 shadow">
