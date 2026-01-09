@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "luna:manifest": "node scripts/generate-luna-manifest.mjs",
     "gen:luna": "node scripts/generate-luna-manifest.mjs",
-    "dev": "npm run gen:luna && next dev",
-    "build": "npm run gen:luna && next build",
+    "dev": "npm run luna:manifest && next dev",
+    "build": "npm run luna:manifest && next build",
     "start": "next start",
     "lint": "eslint"
   },
