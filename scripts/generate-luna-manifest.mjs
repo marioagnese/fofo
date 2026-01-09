@@ -1,33 +1,66 @@
-import fs from "fs";
-import path from "path";
+// scripts/generate-luna-manifest.mjs
+import fs from "node:fs";
+import path from "node:path";
 
-const root = process.cwd();
-const imagesDir = path.join(root, "public", "luna", "images");
-const videosDir = path.join(root, "public", "luna", "videos");
-const outFile = path.join(root, "public", "luna", "manifest.json");
+const ROOT = process.cwd();
+const PUBLIC_DIR = path.join(ROOT, "public");
+const LUNA_DIR = path.join(PUBLIC_DIR, "luna");
+const IMAGES_DIR = path.join(LUNA_DIR, "images");
+const VIDEOS_DIR = path.join(LUNA_DIR, "videos");
+const OUT_FILE = path.join(LUNA_DIR, "manifest.json");
 
-const imageExt = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif"]);
-const videoExt = new Set([".mp4", ".webm", ".mov"]);
+// Allowed extensions
+const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif"]);
+const VIDEO_EXT = new Set([".mp4", ".webm", ".mov", ".m4v"]);
 
-function listFiles(dir, allowedExt) {
-  if (!fs.existsSync(dir)) return [];
-  return fs
-    .readdirSync(dir)
-    .filter((f) => allowedExt.has(path.extname(f).toLowerCase()))
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+function ensureDir(dir) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
-const images = listFiles(imagesDir, imageExt).map((f) => `/luna/images/${f}`);
-const videos = listFiles(videosDir, videoExt).map((f) => `/luna/videos/${f}`);
+function listFiles(dir, allowedExtSet) {
+  if (!fs.existsSync(dir)) return [];
 
-const payload = {
-  generatedAt: new Date().toISOString(),
-  images,
-  videos,
-};
+  const items = fs.readdirSync(dir, { withFileTypes: true });
 
-fs.mkdirSync(path.dirname(outFile), { recursive: true });
-fs.writeFileSync(outFile, JSON.stringify(payload, null, 2), "utf8");
+  const files = items
+    .filter((d) => d.isFile())
+    .map((d) => d.name)
+    .filter((name) => allowedExtSet.has(path.extname(name).toLowerCase()));
 
-console.log(`✅ Wrote ${outFile}`);
-console.log(`   images: ${images.length}, videos: ${videos.length}`);
+  // Natural-ish sort so luna2 < luna10
+  files.sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
+  );
+
+  return files;
+}
+
+function toPublicUrl(kind, filename) {
+  // kind = "images" or "videos"
+  return `/luna/${kind}/${filename}`;
+}
+
+function main() {
+  ensureDir(LUNA_DIR);
+
+  const images = listFiles(IMAGES_DIR, IMAGE_EXT).map((f) =>
+    toPublicUrl("images", f)
+  );
+  const videos = listFiles(VIDEOS_DIR, VIDEO_EXT).map((f) =>
+    toPublicUrl("videos", f)
+  );
+
+  const manifest = {
+    generatedAt: new Date().toISOString(),
+    images,
+    videos,
+  };
+
+  fs.writeFileSync(OUT_FILE, JSON.stringify(manifest, null, 2), "utf8");
+
+  console.log(
+    `[LUNA] manifest.json generated: ${images.length} images, ${videos.length} videos -> public/luna/manifest.json`
+  );
+}
+
+main();

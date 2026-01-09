@@ -13,86 +13,11 @@ interface Message {
   url?: string;
 }
 
-/* -------------------- Local media pools -------------------- */
-/**
- * IMPORTANT:
- * - These must match exactly what exists under /public
- * - If you add new files (luna33.jpg, video26.mp4, etc) add them here.
- * - (Later we can generate this automatically with a manifest.)
- */
-const LUNA_IMAGES: string[] = [
-  "/luna/images/luna.jpg",
-  "/luna/images/luna1.jpg",
-  "/luna/images/luna2.jpg",
-  "/luna/images/luna3.jpg",
-  "/luna/images/luna5.jpg",
-  "/luna/images/luna6.png",
-  "/luna/images/luna7.jpg",
-  "/luna/images/luna8.png",
-  "/luna/images/luna9.jpg",
-  "/luna/images/luna10.jpg",
-  "/luna/images/luna11.jpg",
-  "/luna/images/luna12.jpg",
-  "/luna/images/luna13.jpg",
-  "/luna/images/luna14.jpg",
-  "/luna/images/luna15.jpg",
-  "/luna/images/luna16.jpg",
-  "/luna/images/luna17.jpg",
-  "/luna/images/luna18.jpg",
-  "/luna/images/luna19.jpg",
-  "/luna/images/luna20.jpg",
-  "/luna/images/luna21.jpg",
-  "/luna/images/luna22.jpg",
-  "/luna/images/luna23.jpg",
-  "/luna/images/luna24.jpg",
-  "/luna/images/luna25.jpg",
-
-  // add your newer ones (from your screenshot)
-  "/luna/images/luna33.jpg",
-  "/luna/images/luna34.png",
-  "/luna/images/luna35.jpg",
-  "/luna/images/luna36.jpg",
-  "/luna/images/luna37.jpg",
-  "/luna/images/luna38.jpg",
-  "/luna/images/lunafront.jpg",
-];
-
-const LUNA_VIDEOS: string[] = [
-  "/luna/videos/video1.mp4",
-  "/luna/videos/video2.mp4",
-  "/luna/videos/video3.mp4",
-  "/luna/videos/video4.mp4",
-  "/luna/videos/video5.mp4",
-  "/luna/videos/video6.mp4",
-  "/luna/videos/video7.mp4",
-  "/luna/videos/video8.mp4",
-  "/luna/videos/video9.mp4",
-  "/luna/videos/video10.mp4",
-  "/luna/videos/video11.mp4",
-  "/luna/videos/video12.mp4",
-  "/luna/videos/video13.mp4",
-  "/luna/videos/video14.mp4",
-  "/luna/videos/video15.mp4",
-  "/luna/videos/video16.mp4",
-  "/luna/videos/video17.mp4",
-  "/luna/videos/video18.mp4",
-  "/luna/videos/video19.mp4",
-  "/luna/videos/video20.mp4",
-  "/luna/videos/video21.mp4",
-
-  // add your newer ones
-  "/luna/videos/video22.mp4",
-  "/luna/videos/video23.mp4",
-  "/luna/videos/video24.mp4",
-  "/luna/videos/video25.mp4",
-  "/luna/videos/video26.mp4",
-  "/luna/videos/video27.mp4",
-  "/luna/videos/video28.mp4",
-  "/luna/videos/video29.mp4",
-  "/luna/videos/video30.mp4",
-  "/luna/videos/video31.mp4",
-  "/luna/videos/video32.mp4",
-];
+type LunaManifest = {
+  generatedAt: string;
+  images: string[];
+  videos: string[];
+};
 
 /* -------------------- Persistent non-repeat helpers -------------------- */
 function lsKey(userId: string, kind: "images" | "videos") {
@@ -136,7 +61,6 @@ function pickNonRepeatingUrl(
 ): { url: string; idx: number } {
   if (!pool.length) throw new Error("Empty media pool");
 
-  // helper to list candidate indices based on a disallowed set
   const candidatesFrom = (disallowedIdx: Set<number>) => {
     const out: number[] = [];
     for (let i = 0; i < pool.length; i++) {
@@ -146,16 +70,19 @@ function pickNonRepeatingUrl(
   };
 
   // 1) try: not seen + not used this session
-  const disallowed = new Set<number>([...seenPersistedRef.current, ...usedSessionRef.current]);
+  const disallowed = new Set<number>([
+    ...seenPersistedRef.current,
+    ...usedSessionRef.current,
+  ]);
   let candidates = candidatesFrom(disallowed);
 
-  // 2) if none: allow seen reset (but still avoid session repeats)
+  // 2) if none: reset seen (still avoid session repeats)
   if (!candidates.length) {
     seenPersistedRef.current = [];
     candidates = candidatesFrom(new Set<number>(usedSessionRef.current));
   }
 
-  // 3) if still none (chat already contains everything): allow anything except last-used-in-session if possible
+  // 3) if still none (chat already contains everything): avoid only last in-session if possible
   if (!candidates.length) {
     const dis2 = new Set<number>(usedSessionRef.current.slice(-1));
     candidates = candidatesFrom(dis2);
@@ -186,8 +113,13 @@ export default function LunaChatPage() {
         'You can just talk to me, or ask: “send me a pic” or “show me a video”.',
     },
   ]);
+
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
+
+  // Manifest state
+  const [manifest, setManifest] = useState<LunaManifest | null>(null);
+  const [manifestError, setManifestError] = useState<string | null>(null);
 
   const nextId = useRef(2);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -201,10 +133,46 @@ export default function LunaChatPage() {
   const seenVideoIndexesPersisted = useRef<number[]>([]);
 
   useEffect(() => {
-    // load persisted indices once
+    // Load persisted indices once
     seenImageIndexesPersisted.current = readSeen(userId, "images");
     seenVideoIndexesPersisted.current = readSeen(userId, "videos");
   }, [userId]);
+
+  useEffect(() => {
+    // Load manifest from public file
+    let cancelled = false;
+
+    async function load() {
+      try {
+        setManifestError(null);
+        const res = await fetch("/luna/manifest.json", { cache: "no-store" });
+        if (!res.ok) throw new Error(`manifest fetch failed: ${res.status}`);
+        const data = (await res.json()) as LunaManifest;
+
+        if (!data || !Array.isArray(data.images) || !Array.isArray(data.videos)) {
+          throw new Error("manifest shape invalid");
+        }
+
+        if (!cancelled) setManifest(data);
+      } catch (e: any) {
+        if (!cancelled) {
+          setManifest(null);
+          setManifestError(
+            "Luna media library didn’t load. Did you generate /public/luna/manifest.json?"
+          );
+          console.error("[LUNA] manifest load error:", e);
+        }
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const LUNA_IMAGES = manifest?.images ?? [];
+  const LUNA_VIDEOS = manifest?.videos ?? [];
 
   const alreadyInChat = useMemo(() => {
     const s = new Set<string>();
@@ -231,6 +199,14 @@ export default function LunaChatPage() {
   };
 
   const sendMedia = (kind: "image" | "video") => {
+    if (!manifest) {
+      addLunaText(
+        manifestError ??
+          "Hold on… my media closet isn’t loaded yet 😘 Try again in a second."
+      );
+      return;
+    }
+
     if (kind === "video" && LUNA_VIDEOS.length) {
       const picked = pickNonRepeatingUrl(
         LUNA_VIDEOS,
@@ -288,10 +264,7 @@ export default function LunaChatPage() {
     // 2) Media routing (non-repeating, persistent)
     if (wantsVideo) return sendMedia("video");
     if (wantsImage) return sendMedia("image");
-    if (wantsSurprise) {
-      // bias to images but sometimes video
-      return Math.random() < 0.75 ? sendMedia("image") : sendMedia("video");
-    }
+    if (wantsSurprise) return Math.random() < 0.75 ? sendMedia("image") : sendMedia("video");
 
     // 3) Otherwise, talk to AI Luna via /api/luna
     try {
@@ -300,10 +273,7 @@ export default function LunaChatPage() {
       const res = await fetch("/api/luna", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: trimmed,
-          userId,
-        }),
+        body: JSON.stringify({ message: trimmed, userId }),
       });
 
       const data = await res.json();
@@ -314,9 +284,7 @@ export default function LunaChatPage() {
           id: nextId.current++,
           sender: "luna",
           kind: "text",
-          text:
-            data.reply ??
-            "I’m here, just thinking of what to say to you… stay with me 💕",
+          text: data.reply ?? "I’m here… say it again for me 💕",
         },
       ]);
     } catch (err) {
@@ -336,7 +304,6 @@ export default function LunaChatPage() {
     }
   };
 
-  /* -------------------- UI -------------------- */
   return (
     <main className="relative min-h-screen w-screen overflow-hidden bg-pink-100">
       {/* Background */}
@@ -365,6 +332,11 @@ export default function LunaChatPage() {
                 <div className="text-xs text-emerald-600">
                   ● {isThinking ? "typing…" : "online"}
                 </div>
+                {manifest && (
+                  <div className="text-[10px] text-zinc-500">
+                    media: {LUNA_IMAGES.length} pics · {LUNA_VIDEOS.length} vids
+                  </div>
+                )}
               </div>
             </div>
             <a href="/" className="text-xs font-medium text-pink-500 hover:underline">
@@ -404,6 +376,10 @@ export default function LunaChatPage() {
                 What’s FOFO? ✨
               </button>
             </div>
+
+            {manifestError && (
+              <div className="mt-2 text-xs text-red-600">{manifestError}</div>
+            )}
           </div>
 
           {/* Messages */}
