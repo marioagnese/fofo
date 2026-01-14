@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-01-12T18:38:13.304Z",
+  "generatedAt": "2026-01-14T13:29:30.442Z",
   "images": [
     "/luna/images/luna.jpg",
     "/luna/images/luna1.jpg",
@@ -57,6 +57,11 @@
     "/luna/images/luna54.jpg",
     "/luna/images/luna55.jpg",
     "/luna/images/luna56.jpg",
+    "/luna/images/luna57.jpg",
+    "/luna/images/luna58.jpg",
+    "/luna/images/luna59.jpg",
+    "/luna/images/luna60.jpg",
+    "/luna/images/luna61.png",
     "/luna/images/lunafront.jpg"
   ],
   "videos": [
@@ -138,6 +143,12 @@
     "/luna/videos/video76.mp4",
     "/luna/videos/video77.mp4",
     "/luna/videos/video79.mp4",
-    "/luna/videos/video80.mp4"
+    "/luna/videos/video80.mp4",
+    "/luna/videos/video81.mp4",
+    "/luna/videos/video82.mp4",
+    "/luna/videos/video83.mp4",
+    "/luna/videos/video84.mp4",
+    "/luna/videos/video85.mp4",
+    "/luna/videos/video86.mp4"
   ]
 }
